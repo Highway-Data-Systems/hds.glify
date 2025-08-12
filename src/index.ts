@@ -25,6 +25,47 @@ const shader = {
   },
 };
 
+export interface IGlifyShader {
+  vertex: string;
+  fragment: {
+    dot: string;
+    point: string;
+    puck: string;
+    simpleCircle: string;
+    square: string;
+    polygon: string;
+  };
+}
+
+export interface IGlify {
+  longitudeKey: number;
+  latitudeKey: number;
+  clickSetupMaps: Map[];
+  contextMenuSetupMaps: Map[];
+  hoverSetupMaps: Map[];
+  shader: IGlifyShader;
+
+  Points: typeof Points;
+  Shapes: typeof Shapes;
+  Lines: typeof Lines;
+
+  pointsInstances: Points[];
+  shapesInstances: Shapes[];
+  linesInstances: Lines[];
+
+  longitudeFirst(): this;
+  latitudeFirst(): this;
+  readonly instances: Array<Points | Lines | Shapes>;
+
+  points(settings: Partial<IPointsSettings>): Points;
+  lines(settings: Partial<ILinesSettings>): Lines;
+  shapes(settings: Partial<IShapesSettings>): Shapes;
+
+  setupClick(map: Map): void;
+  setupContextMenu(map: Map): void;
+  setupHover(map: Map, hoverWait?: number, immediate?: false): void;
+}
+
 export class Glify {
   longitudeKey = 1;
   latitudeKey = 0;
