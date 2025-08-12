@@ -177,3 +177,16 @@ if (typeof window !== "undefined" && window.L) {
   // @ts-expect-error exporting it to window
   window.L.Glify = Glify;
 }
+
+export type { ICanvasOverlayDrawEvent } from "./canvas-overlay";
+export type { IColor } from "./color";
+export type {
+  IBaseGlLayerSettings,
+  ColorCallback,
+  EventCallback,
+  IShaderVariable,
+  SetupHoverCallback,
+} from "./base-gl-layer";
+export type { WeightCallback, ILinesSettings } from "./lines";
+export type { IPointsSettings, IPointVertex } from "./points";
+export type { IShapesSettings } from "./shapes";
