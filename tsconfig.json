@@ -18,5 +18,6 @@
     "target": "es2018",
     "lib": ["es2019", "dom"]
   },
+  "include": ["src/**/*.ts", "src/**/*.d.ts", "src/**/*.glsl"],
   "exclude": ["node_modules", "**/*.json", "dist", "examples", "__coverage__"]
 }
