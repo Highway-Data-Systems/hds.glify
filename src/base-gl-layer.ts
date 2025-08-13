@@ -1,64 +1,16 @@
 import { LeafletMouseEvent, Map } from "leaflet";
 
-import { IColor } from "./color";
+import { IColor, IBaseGlLayerSettings, IShaderVariable, ColorCallback, SetupHoverCallback, EventCallback } from "./types-base";
 import { IPixel } from "./pixel";
 import { CanvasOverlay, ICanvasOverlayDrawEvent } from "./canvas-overlay";
 import { notProperlyDefined } from "./errors";
 import { MapMatrix } from "./map-matrix";
-
-export interface IShaderVariable {
-  type: "FLOAT";
-  start?: number;
-  size: number;
-  normalize?: boolean;
-}
-
-export type EventCallback = (
-  e: LeafletMouseEvent,
-  feature: any
-) => boolean | void;
-
-export type SetupHoverCallback = (
-  map: Map,
-  hoverWait?: number,
-  immediate?: false
-) => void;
-
-export interface IBaseGlLayerSettings {
-  data: any;
-  longitudeKey: number;
-  latitudeKey: number;
-  pane: string;
-  map: Map;
-  shaderVariables?: {
-    [name: string]: IShaderVariable;
-  };
-  setupClick?: (map: Map) => void;
-  setupContextMenu?: (map: Map) => void;
-  setupHover?: SetupHoverCallback;
-  sensitivity?: number;
-  sensitivityHover?: number;
-  vertexShaderSource?: (() => string) | string;
-  fragmentShaderSource?: (() => string) | string;
-  canvas?: HTMLCanvasElement;
-  click?: EventCallback;
-  contextMenu?: EventCallback;
-  hover?: EventCallback;
-  hoverOff?: EventCallback;
-  color?: ColorCallback | IColor | string | number[] | null;
-  className?: string;
-  opacity?: number;
-  preserveDrawingBuffer?: boolean;
-  hoverWait?: number;
-}
 
 export const defaultPane = "overlayPane";
 export const defaultHoverWait = 250;
 export const defaults: Partial<IBaseGlLayerSettings> = {
   pane: defaultPane,
 };
-
-export type ColorCallback = (featureIndex: number, feature: any) => IColor;
 
 export abstract class BaseGlLayer<
   T extends IBaseGlLayerSettings = IBaseGlLayerSettings,
@@ -98,15 +50,8 @@ export abstract class BaseGlLayer<
     return this.settings.pane ?? defaultPane;
   }
 
-  get className(): string {
-    return this.settings.className ?? "";
-  }
-
-  get map(): Map {
-    if (!this.settings.map) {
-      throw new Error(notProperlyDefined("settings.map"));
-    }
-    return this.settings.map;
+  get hoverWait(): number {
+    return this.settings.hoverWait ?? defaultHoverWait;
   }
 
   get sensitivity(): number {
@@ -123,8 +68,48 @@ export abstract class BaseGlLayer<
     return this.settings.sensitivityHover;
   }
 
-  get hoverWait(): number {
-    return this.settings.hoverWait ?? defaultHoverWait;
+  get color(): ColorCallback | IColor | string | number[] | null {
+    return this.settings.color ?? null;
+  }
+
+  get opacity(): number {
+    return this.settings.opacity ?? 0.5;
+  }
+
+  get className(): string {
+    return this.settings.className ?? "";
+  }
+
+  get preserveDrawingBuffer(): boolean {
+    return this.settings.preserveDrawingBuffer ?? false;
+  }
+
+  get vertexShaderSource(): (() => string) | string {
+    if (!this.settings.vertexShaderSource) {
+      throw new Error(notProperlyDefined("settings.vertexShaderSource"));
+    }
+    return this.settings.vertexShaderSource;
+  }
+
+  get fragmentShaderSource(): (() => string) | string {
+    if (!this.settings.fragmentShaderSource) {
+      throw new Error(notProperlyDefined("settings.fragmentShaderSource"));
+    }
+    return this.settings.fragmentShaderSource;
+  }
+
+  get shaderVariables(): { [name: string]: IShaderVariable } {
+    if (!this.settings.shaderVariables) {
+      throw new Error(notProperlyDefined("settings.shaderVariables"));
+    }
+    return this.settings.shaderVariables;
+  }
+
+  get map(): Map {
+    if (!this.settings.map) {
+      throw new Error(notProperlyDefined("settings.map"));
+    }
+    return this.settings.map;
   }
 
   get longitudeKey(): number {
@@ -141,20 +126,8 @@ export abstract class BaseGlLayer<
     return this.settings.latitudeKey;
   }
 
-  get opacity(): number {
-    if (typeof this.settings.opacity !== "number") {
-      throw new Error(notProperlyDefined("settings.opacity"));
-    }
-    return this.settings.opacity;
-  }
-
-  get color(): ColorCallback | IColor | string | number[] | null {
-    return this.settings.color ?? null;
-  }
-
   constructor(settings: Partial<IBaseGlLayerSettings>) {
-    this.settings = { ...defaults, ...settings };
-    this.mapMatrix = new MapMatrix();
+    this.settings = { ...BaseGlLayer.defaults, ...settings };
     this.active = true;
     this.vertexShader = null;
     this.fragmentShader = null;
@@ -162,11 +135,14 @@ export abstract class BaseGlLayer<
     this.matrix = null;
     this.vertices = null;
     this.vertexLines = null;
+    
     try {
       this.mapCenterPixels = this.map.project(this.map.getCenter(), 0);
     } catch (err) {
       this.mapCenterPixels = { x: -0, y: -0 };
     }
+    
+    this.mapMatrix = new MapMatrix();
     const preserveDrawingBuffer = Boolean(settings.preserveDrawingBuffer);
     const layer = (this.layer = new CanvasOverlay(
       (context: ICanvasOverlayDrawEvent) => {
@@ -174,21 +150,35 @@ export abstract class BaseGlLayer<
       },
       this.pane
     ).addTo(this.map));
+    
     if (!layer.canvas) {
       throw new Error(notProperlyDefined("layer.canvas"));
     }
+    
     const canvas = (this.canvas = layer.canvas);
     canvas.width = canvas.clientWidth;
     canvas.height = canvas.clientHeight;
     canvas.style.position = "absolute";
+    
     if (this.className) {
       canvas.className += " " + this.className;
     }
+    
     this.gl = (canvas.getContext("webgl2", { preserveDrawingBuffer }) ??
       canvas.getContext("webgl", { preserveDrawingBuffer }) ??
       canvas.getContext("experimental-webgl", {
         preserveDrawingBuffer,
       })) as WebGLRenderingContext;
+
+    if (this.settings.setupClick) {
+      this.settings.setupClick(this.map);
+    }
+    if (this.settings.setupContextMenu) {
+      this.settings.setupContextMenu(this.map);
+    }
+    if (this.settings.setupHover) {
+      this.settings.setupHover(this.map, this.hoverWait);
+    }
   }
 
   abstract drawOnCanvas(context: ICanvasOverlayDrawEvent): this;
