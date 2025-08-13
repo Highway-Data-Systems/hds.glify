@@ -1,9 +1,10 @@
 import { LeafletMouseEvent, Map } from "leaflet";
 
-import { Lines, ILinesSettings } from "./lines";
-import { Points, IPointsSettings } from "./points";
-import { Shapes, IShapesSettings } from "./shapes";
+import { Lines } from "./lines";
+import { Points } from "./points";
+import { Shapes } from "./shapes";
 import { debounce } from "./utils";
+import { IPointsSettings, ILinesSettings, IShapesSettings } from "./types";
 
 import vertex from "./shader/vertex/default.glsl";
 import dot from "./shader/fragment/dot.glsl";
@@ -12,6 +13,8 @@ import puck from "./shader/fragment/puck.glsl";
 import simpleCircle from "./shader/fragment/simple-circle.glsl";
 import square from "./shader/fragment/square.glsl";
 import polygon from "./shader/fragment/polygon.glsl";
+
+export * from "./types";
 
 const shader = {
   vertex,
@@ -25,50 +28,19 @@ const shader = {
   },
 };
 
-export interface IGlifyShader {
-  vertex: string;
-  fragment: {
-    dot: string;
-    point: string;
-    puck: string;
-    simpleCircle: string;
-    square: string;
-    polygon: string;
-  };
-}
-
-export interface IGlify {
-  longitudeKey: number;
-  latitudeKey: number;
-  clickSetupMaps: Map[];
-  contextMenuSetupMaps: Map[];
-  hoverSetupMaps: Map[];
-  shader: IGlifyShader;
-
-  Points: typeof Points;
-  Shapes: typeof Shapes;
-  Lines: typeof Lines;
-
-  pointsInstances: Points[];
-  shapesInstances: Shapes[];
-  linesInstances: Lines[];
-
-  longitudeFirst(): this;
-  latitudeFirst(): this;
-  readonly instances: Array<Points | Lines | Shapes>;
-
-  points(settings: Partial<IPointsSettings>): Points;
-  lines(settings: Partial<ILinesSettings>): Lines;
-  shapes(settings: Partial<IShapesSettings>): Shapes;
-
-  setupClick(map: Map): void;
-  setupContextMenu(map: Map): void;
-  setupHover(map: Map, hoverWait?: number, immediate?: false): void;
-}
-
 export class Glify {
-  longitudeKey = 1;
-  latitudeKey = 0;
+  /**
+   * Coordinate order follows the World Geodetic System (WGS84) standard
+   * as defined by the National Geospatial-Intelligence Agency (NGA):
+   * https://earth-info.nga.mil/php/download.php?file=coord-wgs84
+   * 
+   * This standard is adopted by GeoJSON specification:
+   * https://geojson.org/
+   * 
+   * Coordinates are always [longitude, latitude] in WGS84/GeoJSON
+   */
+  longitudeKey = 0;  // WGS84/GeoJSON standard: [longitude, latitude]
+  latitudeKey = 1;   // WGS84/GeoJSON standard: [longitude, latitude]
   clickSetupMaps: Map[] = [];
   contextMenuSetupMaps: Map[] = [];
   hoverSetupMaps: Map[] = [];
@@ -82,16 +54,41 @@ export class Glify {
   shapesInstances: Shapes[] = [];
   linesInstances: Lines[] = [];
 
+  /**
+   * Set coordinate order to [longitude, latitude] - WGS84/GeoJSON standard
+   * This is the default and recommended format
+   */
   longitudeFirst(): this {
     this.longitudeKey = 0;
     this.latitudeKey = 1;
     return this;
   }
 
+  /**
+   * Set coordinate order to [latitude, longitude] - Legacy format
+   * Use only for data that doesn't follow WGS84/GeoJSON standards
+   */
   latitudeFirst(): this {
     this.latitudeKey = 0;
     this.longitudeKey = 1;
     return this;
+  }
+
+  getCoordinateOrder(): "latFirst" | "lngFirst" {
+    return this.longitudeKey === 0 ? "lngFirst" : "latFirst";
+  }
+
+  /**
+   * Set coordinate order for data parsing
+   * @param order - "lngFirst" for WGS84/GeoJSON standard [longitude, latitude]
+   *                "latFirst" for legacy format [latitude, longitude]
+   */
+  setCoordinateOrder(order: "latFirst" | "lngFirst"): this {
+    if (order === "lngFirst") {
+      return this.longitudeFirst();
+    } else {
+      return this.latitudeFirst();
+    }
   }
 
   get instances(): Array<Points | Lines | Shapes> {
@@ -107,8 +104,8 @@ export class Glify {
       setupClick: this.setupClick.bind(this),
       setupContextMenu: this.setupContextMenu.bind(this),
       setupHover: this.setupHover.bind(this),
-      latitudeKey: glify.latitudeKey,
-      longitudeKey: glify.longitudeKey,
+      latitudeKey: this.latitudeKey,
+      longitudeKey: this.longitudeKey,
       vertexShaderSource: () => {
         return this.shader.vertex;
       },
@@ -177,7 +174,7 @@ export class Glify {
 
   setupContextMenu(map: Map): void {
     if (this.contextMenuSetupMaps.includes(map)) return;
-    this.clickSetupMaps.push(map);
+    this.contextMenuSetupMaps.push(map);
     map.on("contextmenu", (e: LeafletMouseEvent) => {
       e.originalEvent.preventDefault(); // Prevent the default context menu from showing
       let hit;
@@ -212,6 +209,7 @@ export class Glify {
 
 export const glify = new Glify();
 export default glify;
+
 if (typeof window !== "undefined" && window.L) {
   // @ts-expect-error exporting it to window
   window.L.glify = glify;
@@ -219,15 +217,17 @@ if (typeof window !== "undefined" && window.L) {
   window.L.Glify = Glify;
 }
 
-export type { ICanvasOverlayDrawEvent } from "./canvas-overlay";
-export type { IColor } from "./color";
-export type {
-  IBaseGlLayerSettings,
-  ColorCallback,
-  EventCallback,
-  IShaderVariable,
-  SetupHoverCallback,
-} from "./base-gl-layer";
-export type { WeightCallback, ILinesSettings } from "./lines";
-export type { IPointsSettings, IPointVertex } from "./points";
-export type { IShapesSettings } from "./shapes";
+// Export runtime classes and functions
+export { Points } from "./points";
+export { Lines } from "./lines";
+export { Shapes } from "./shapes";
+export { LineFeatureVertices } from "./line-feature-vertices";
+export { CanvasOverlay } from "./canvas-overlay";
+export { BaseGlLayer } from "./base-gl-layer";
+export { MapMatrix } from "./map-matrix";
+export { 
+  latLonToPixel, 
+  pixelInCircle, 
+  locationDistance,
+  debounce 
+} from "./utils";

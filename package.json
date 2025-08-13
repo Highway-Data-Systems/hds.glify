@@ -12,7 +12,8 @@
   ],
   "scripts": {
     "test": "jest",
-    "build": "webpack --config webpack.config.js",
+    "build": "npm run build:types && webpack --config webpack.config.js",
+    "build:types": "tsc --declaration --declarationMap --outDir dist --rootDir src",
     "coverage": "jest --coverage --coverage-provider v8 && codecov",
     "serve": "webpack-dev-server --config webpack.config.dev.js --open",
     "prepublish-gh-pages": "webpack --config webpack.config.gh-pages.js",
