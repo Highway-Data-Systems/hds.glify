@@ -28,6 +28,7 @@ export abstract class BaseGlLayer<
   vertexShader: WebGLShader | null;
   vertices: any;
   vertexLines: any;
+  // private _mapCenterPixels?: IPixel;
   mapCenterPixels: IPixel;
 
   buffers: { [name: string]: WebGLBuffer } = {};
@@ -38,6 +39,17 @@ export abstract class BaseGlLayer<
 
   abstract render(): this;
   abstract removeInstance(this: any): this;
+
+  // get mapCenterPixels(): IPixel {
+  //   if (!this._mapCenterPixels) {
+  //     try {
+  //       this._mapCenterPixels = this.map.project(this.map.getCenter(), 0);
+  //     } catch (err) {
+  //       this._mapCenterPixels = { x: -0, y: -0 };
+  //     }
+  //   }
+  //   return this._mapCenterPixels;
+  // }
 
   get data(): any {
     if (!this.settings.data) {
@@ -135,13 +147,15 @@ export abstract class BaseGlLayer<
     this.matrix = null;
     this.vertices = null;
     this.vertexLines = null;
-    
+   
+    // TODO REMOVE: 
+
     try {
       this.mapCenterPixels = this.map.project(this.map.getCenter(), 0);
     } catch (err) {
       this.mapCenterPixels = { x: -0, y: -0 };
     }
-    
+
     this.mapMatrix = new MapMatrix();
     const preserveDrawingBuffer = Boolean(settings.preserveDrawingBuffer);
     const layer = (this.layer = new CanvasOverlay(
