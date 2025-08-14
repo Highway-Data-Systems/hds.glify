@@ -12,6 +12,10 @@
   ],
   "scripts": {
     "test": "jest",
+    "test:integration": "playwright test",
+    "test:integration:ui": "playwright test --ui",
+    "test:integration:debug": "playwright test --debug",
+    "test:integration:install": "playwright install",
     "build": "npm run build:types && webpack --config webpack.config.js",
     "build:types": "tsc --declaration --declarationMap --outDir dist --rootDir src",
     "coverage": "jest --coverage --coverage-provider v8 && codecov",

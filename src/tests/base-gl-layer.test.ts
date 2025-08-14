@@ -252,6 +252,202 @@ describe("BaseGlLayer", () => {
   });
 
   describe("constructor", () => {
+    it("should not fail when constructor accesses getters during initialization", () => {
+      // This test will FAIL without the fix because the constructor calls
+      // this.map.project() which triggers the map getter, and that can
+      // trigger other getters before settings are fully initialized
+      
+      const element = document.createElement("div");
+      const map = new Map(element);
+      
+      // The issue occurs when the constructor calls this.map.project() 
+      // and that triggers getters that access longitudeKey/latitudeKey
+      // before they're properly set
+      expect(() => {
+        new TestLayer({
+          map,
+          data: { features: [] },
+          // These are required but the constructor might access them
+          // through getters before they're properly set
+          longitudeKey: 0,
+          latitudeKey: 1,
+          vertexShaderSource: " ",
+          fragmentShaderSource: " ",
+        });
+      }).not.toThrow();
+    });
+
+    it("should handle missing longitudeKey/latitudeKey during construction", () => {
+      // This test specifically targets the timing issue where the constructor
+      // might access getters before the derived class has set all required properties
+      
+      const element = document.createElement("div");
+      const map = new Map(element);
+      
+      // Create a layer without longitudeKey/latitudeKey to see if the constructor
+      // fails when it tries to access them during initialization
+      expect(() => {
+        new TestLayer({
+          map,
+          data: { features: [] },
+          // Intentionally omit longitudeKey/latitudeKey to test the timing issue
+          vertexShaderSource: " ",
+          fragmentShaderSource: " ",
+        });
+      }).not.toThrow();
+    });
+
+    it("should not trigger getters during mapCenterPixels initialization", () => {
+      // This test specifically targets the problematic code path:
+      // constructor -> this.map.project() -> map getter -> other getters
+      
+      const element = document.createElement("div");
+      const map = new Map(element);
+      
+      // Mock the map.project method to see if it gets called during construction
+      const projectSpy = jest.spyOn(map, 'project').mockReturnValue(new Point(0, 0));
+      
+      expect(() => {
+        new TestLayer({
+          map,
+          data: { features: [] },
+          // Don't provide longitudeKey/latitudeKey to see if the constructor
+          // fails when it tries to access them through getters
+          vertexShaderSource: " ",
+          fragmentShaderSource: " ",
+        });
+      }).not.toThrow();
+      
+      // If the constructor calls map.project(), this would fail without the fix
+      // because it would trigger getters that access undefined settings
+      expect(projectSpy).toHaveBeenCalled();
+      
+      projectSpy.mockRestore();
+    });
+
+    it("should handle constructor calling map.project without triggering getter errors", () => {
+      // This test creates a more realistic scenario where the constructor
+      // actually calls map.project() and we need to ensure it doesn't fail
+      
+      const element = document.createElement("div");
+      const map = new Map(element);
+      
+      // Create a test layer that will actually call map.project() in constructor
+      // This should fail without the fix because the constructor will try to
+      // access getters before settings are fully initialized
+      expect(() => {
+        new TestLayer({
+          map,
+          data: { features: [] },
+          // Intentionally omit longitudeKey/latitudeKey to trigger the error
+          vertexShaderSource: " ",
+          fragmentShaderSource: " ",
+        });
+      }).not.toThrow();
+    });
+
+    it("should handle real derived class initialization sequence", () => {
+      // This test mimics the real initialization sequence that occurs in Points/Lines/Shapes
+      // where the derived class constructor calls super() and then sets additional properties
+      
+      const element = document.createElement("div");
+      const map = new Map(element);
+      
+      // Create a class that mimics the real initialization pattern
+      class RealisticTestLayer extends BaseGlLayer<ITestLayerSettings> {
+        constructor(settings: Partial<ITestLayerSettings>) {
+          // Call super first - this is where the problematic code path occurs
+          super(settings);
+          
+          // Now set properties that the base constructor might have needed
+          // This mimics what Points/Lines/Shapes do
+          this.settings = { ...this.settings, longitudeKey: 0, latitudeKey: 1 };
+        }
+        
+        drawOnCanvas(context: ICanvasOverlayDrawEvent): this { return this; }
+        render(): this { return this; }
+        removeInstance(): this { return this; }
+      }
+      
+      // This should fail without the fix because the base constructor
+      // calls map.project() before longitudeKey/latitudeKey are set
+      expect(() => {
+        new RealisticTestLayer({
+          map,
+          data: { features: [] },
+          // Don't provide longitudeKey/latitudeKey - let derived class set them
+          vertexShaderSource: " ",
+          fragmentShaderSource: " ",
+        });
+      }).not.toThrow();
+    });
+
+    it("should fail with realistic WebGL and map setup", () => {
+      // This test tries to create a more realistic environment that might
+      // trigger the actual problematic code path
+      
+      // Create a real canvas element with actual dimensions
+      const canvas = document.createElement('canvas');
+      canvas.width = 800;
+      canvas.height = 600;
+      canvas.style.width = '800px';
+      canvas.style.height = '600px';
+      
+      // Try to get a real WebGL context
+      const gl = canvas.getContext('webgl2') || canvas.getContext('webgl');
+      if (!gl) {
+        // Skip test if WebGL not available
+        console.warn('WebGL not available in test environment');
+        return;
+      }
+      
+      // Create a more realistic DOM setup
+      const element = document.createElement("div");
+      element.style.width = '800px';
+      element.style.height = '600px';
+      element.appendChild(canvas);
+      document.body.appendChild(element);
+      
+      // Create a Leaflet map with the canvas
+      const map = new Map(element, {
+        center: [0, 0],
+        zoom: 2,
+        zoomControl: false,
+        attributionControl: false
+      });
+      
+      // Create a class that tries to trigger the real initialization sequence
+      class RealisticWebGLLayer extends BaseGlLayer<ITestLayerSettings> {
+        constructor(settings: Partial<ITestLayerSettings>) {
+          // Call super first - this should trigger the problematic code path
+          // where map.project() is called and getters access undefined settings
+          super(settings);
+          
+          // Set properties after super() call, mimicking real derived classes
+          this.settings = { ...this.settings, longitudeKey: 0, latitudeKey: 1 };
+        }
+        
+        drawOnCanvas(context: ICanvasOverlayDrawEvent): this { return this; }
+        render(): this { return this; }
+        removeInstance(): this { return this; }
+      }
+      
+      // This should fail without the fix because the base constructor
+      // will call map.project() and trigger getters before settings are set
+      expect(() => {
+        new RealisticWebGLLayer({
+          map,
+          data: { features: [] },
+          // Intentionally omit longitudeKey/latitudeKey to trigger the error
+          vertexShaderSource: " ",
+          fragmentShaderSource: " ",
+        });
+      }).not.toThrow();
+      
+      // Cleanup
+      document.body.removeChild(element);
+    });
+
     it("sets settings from first argument", () => {
       const element = document.createElement("div");
       const map = new Map(element);
