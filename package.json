@@ -35,6 +35,7 @@
   },
   "homepage": "https://github.com/robertleeplummerjr/Leaflet.glify#readme",
   "dependencies": {
+    "@playwright/test": "^1.54.2",
     "earcut": "^2.2.4",
     "geojson-flatten": "^1.1.1",
     "point-in-polygon": "^1.1.0",
