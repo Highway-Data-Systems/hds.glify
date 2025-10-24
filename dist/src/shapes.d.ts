@@ -16,7 +16,10 @@ export declare class Shapes extends BaseGlLayer {
     settings: Partial<IShapesSettings>;
     bytes: number;
     polygonLookup: PolygonLookup | null;
-    get centerProjectedPixels(): import("leaflet").Point;
+    get centerProjectedPixels(): import("leaflet").Point | {
+        x: number;
+        y: number;
+    };
     get border(): boolean;
     get borderOpacity(): number;
     constructor(settings: Partial<IShapesSettings>);

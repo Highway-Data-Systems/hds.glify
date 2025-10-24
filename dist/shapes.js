@@ -31,9 +31,14 @@ export class Shapes extends BaseGlLayer {
     get centerProjectedPixels() {
         const geoJSONLayer = geoJSON(this.settings.data);
         const bounds = geoJSONLayer.getBounds();
-        const centerLatLng = bounds.getCenter();
-        const centerProjectedPixels = this.map.project(centerLatLng, 0);
-        return centerProjectedPixels;
+        try {
+            const centerLatLng = bounds.getCenter();
+            const centerProjectedPixels = this.map.project(centerLatLng, 0);
+            return centerProjectedPixels;
+        }
+        catch (error) {
+            return { x: 0, y: 0 };
+        }
     }
     get border() {
         if (typeof this.settings.border !== "boolean") {
