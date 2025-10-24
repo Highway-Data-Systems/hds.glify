@@ -553,7 +553,7 @@ describe("BaseGlLayer", () => {
     describe("when setupProgram returns null", () => {
       it("throws", () => {
         const layer = getGlLayer();
-        jest.spyOn(layer.gl, "createProgram").mockReturnValue(null);
+        jest.spyOn(layer.gl, "createProgram").mockReturnValue(null as any);
         expect(() => {
           layer.setupProgram();
         }).toThrow();
@@ -798,7 +798,7 @@ describe("BaseGlLayer", () => {
       describe("when this.gl.createBuffer returns null", () => {
         it("throws", () => {
           const layer = getGlLayer();
-          jest.spyOn(layer.gl, "createBuffer").mockReturnValue(null);
+          jest.spyOn(layer.gl, "createBuffer").mockReturnValue(null as any);
           expect(() => {
             layer.getBuffer("buffer1");
           }).toThrow();
