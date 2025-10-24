@@ -1,7 +1,7 @@
 import earcut from "earcut";
 import PolygonLookup from "polygon-lookup";
 import geojsonFlatten from "geojson-flatten";
-import { LatLng, LeafletMouseEvent, Map } from "leaflet";
+import { geoJSON, LatLng, LeafletMouseEvent, Map } from "leaflet";
 import {
   Feature,
   FeatureCollection,
@@ -55,6 +55,18 @@ export class Shapes extends BaseGlLayer {
   settings: Partial<IShapesSettings>;
   bytes = 6;
   polygonLookup: PolygonLookup | null = null;
+
+  get centerProjectedPixels() {
+    const geoJSONLayer = geoJSON(this.settings.data);
+    const bounds = geoJSONLayer.getBounds();
+    try {
+      const centerLatLng = bounds.getCenter();
+      const centerProjectedPixels = this.map.project(centerLatLng, 0);
+      return centerProjectedPixels;
+    } catch (error) {
+      return { x: 0, y: 0 };
+    }
+  }
 
   get border(): boolean {
     if (typeof this.settings.border !== "boolean") {
@@ -137,7 +149,8 @@ export class Shapes extends BaseGlLayer {
       borderOpacity, // TODO: Make lookup for each shape priority, then fallback
       color,
       data,
-      mapCenterPixels,
+      // mapCenterPixels,
+      centerProjectedPixels,
     } = this;
     let pixel;
     let index;
@@ -241,8 +254,8 @@ export class Shapes extends BaseGlLayer {
         for (let i = 0, iMax = triangles.length; i < iMax; i) {
           pixel = map.project(new LatLng(triangles[i++], triangles[i++]), 0);
           vertices.push(
-            pixel.x - mapCenterPixels.x,
-            pixel.y - mapCenterPixels.y,
+            pixel.x - centerProjectedPixels.x,
+            pixel.y - centerProjectedPixels.y,
             chosenColor.r,
             chosenColor.g,
             chosenColor.b,
@@ -270,8 +283,8 @@ export class Shapes extends BaseGlLayer {
           for (let i = 0, iMax = lines.length; i < iMax; i) {
             pixel = latLonToPixel(lines[i++], lines[i++]);
             vertexLines.push(
-              pixel.x - mapCenterPixels.x,
-              pixel.y - mapCenterPixels.y,
+              pixel.x - centerProjectedPixels.x,
+              pixel.y - centerProjectedPixels.y,
               chosenColor.r,
               chosenColor.g,
               chosenColor.b,
@@ -306,15 +319,16 @@ export class Shapes extends BaseGlLayer {
       settings,
       vertexLines,
       border,
-      mapCenterPixels,
+      // mapCenterPixels,
+      centerProjectedPixels
     } = this;
     // -- set base matrix to translate canvas pixel coordinates -> webgl coordinates
     mapMatrix
       .setSize(canvas.width, canvas.height)
       .scaleTo(scale)
       .translateTo(
-        -offset.x + mapCenterPixels.x,
-        -offset.y + mapCenterPixels.y
+        -offset.x + centerProjectedPixels.x,
+        -offset.y + centerProjectedPixels.y
       );
 
     gl.clear(gl.COLOR_BUFFER_BIT);
