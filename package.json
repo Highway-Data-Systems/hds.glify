@@ -1,6 +1,6 @@
 {
   "name": "leaflet.glify",
-  "version": "3.3.1",
+  "version": "3.4.1",
   "description": "web gl renderer plugin for leaflet",
   "types": "dist/index.d.ts",
   "main": "dist/glify.js",
@@ -38,6 +38,7 @@
     "@playwright/test": "^1.54.2",
     "earcut": "^2.2.4",
     "geojson-flatten": "^1.1.1",
+    "leaflet-rotate": "^0.2.8",
     "point-in-polygon": "^1.1.0",
     "polygon-lookup": "^2.6.0",
     "rbush": "^3.0.1"
@@ -50,6 +51,7 @@
     "@types/geojson": "^7946.0.14",
     "@types/jest": "^29.5.12",
     "@types/leaflet": "^1.9.12",
+    "@types/leaflet-rotate": "^0.2.0",
     "@types/node": "^20.14.2",
     "@types/polygon-lookup": "^2.6.4",
     "@typescript-eslint/eslint-plugin": "^7.13.0",

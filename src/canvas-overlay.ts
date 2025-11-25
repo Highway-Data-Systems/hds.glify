@@ -9,7 +9,7 @@ originally taken from: http://www.sumbera.com/gist/js/leaflet/canvas/L.CanvasOve
  inspired & portions taken from  :   https://github.com/Leaflet/Leaflet.heat
  */
 
-import {
+import L, {
   LatLngBounds,
   Point,
   Layer,
@@ -24,13 +24,16 @@ import {
   LayerOptions,
 } from "leaflet";
 
+import * as leafletRotate from 'leaflet-rotate'
+
+
 export interface ICanvasOverlayDrawEvent {
   canvas: HTMLCanvasElement;
   bounds: LatLngBounds;
   offset: Point;
   scale: number;
   size: Point;
-  zoomScale: number;
+  // zoomScale: number;
   zoom: number;
 }
 
@@ -166,8 +169,21 @@ export class CanvasOverlay extends Layer {
 
   _reset(): void {
     if (this.canvas) {
-      const topLeft = this.map.containerPointToLayerPoint([0, 0]);
-      DomUtil.setPosition(this.canvas, topLeft);
+      
+      // const topLeft = this.map.containerPointToLayerPoint([0, 0]);
+
+      // DomUtil.setPosition(this.canvas, topLeft);
+      // @ts-ignore
+      const bounds = this.map._getPaddedPixelBounds(0)
+      // @ts-ignore
+      const topLeft = this.map.layerPointToLatLng(bounds.min);
+      const center = this.map.getCenter()
+      const zoom = this.map.getZoom()
+      // console.log('_reset', topLeft);
+      // var scale = this.map.getZoomScale(zoom, this._zoom),
+      // @ts-ignore
+      const offset = this.map._latLngToNewLayerPoint(topLeft, zoom, center);
+      L.DomUtil.setTransform(this.canvas, offset);
     }
     this._redraw();
   }
@@ -175,21 +191,31 @@ export class CanvasOverlay extends Layer {
   _redraw(): void {
     const { map, canvas } = this;
     if (map) {
-      const size = map.getSize();
-      const bounds = map.getBounds();
-      const zoomScale =
-        (size.x * 180) / (20037508.34 * (bounds.getEast() - bounds.getWest())); // resolution = 1/zoomScale
+      // const size = map.getSize();
+      // @ts-ignore
+      const bounds = this.map._getPaddedPixelBounds(0);
+      const size = bounds.getSize()
+
+      // const zoomScale =
+      //   (size.x * 180) / (20037508.34 * (bounds.getEast() - bounds.getWest())); // resolution = 1/zoomScale
       const zoom = map.getZoom();
-      const topLeft = new LatLng(bounds.getNorth(), bounds.getWest());
+       // @ts-ignore
+      const topLeft = this.map.layerPointToLatLng(bounds.min);
       const offset = this._unclampedProject(topLeft, 0);
       if (canvas) {
+        const m = Browser.retina ? 2 : 1;
+        L.DomUtil.setPosition(canvas, bounds.min)
+        canvas.width = m * size.x;
+        canvas.height = m * size.y;
+        canvas.style.width = size.x + 'px';
+        canvas.style.height = size.y + 'px';
         this._userDrawFunc({
           bounds,
           canvas,
           offset,
           scale: Math.pow(2, zoom),
           size,
-          zoomScale,
+          // zoomScale,
           zoom,
         });
       }
@@ -215,6 +241,8 @@ export class CanvasOverlay extends Layer {
     ).min;
     if (canvas && offset) {
       DomUtil.setTransform(canvas, offset, scale);
+      // console.log('DomUtil.setTransform',DomUtil.setTransform);
+      
     }
   }
 

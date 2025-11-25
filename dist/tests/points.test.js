@@ -505,7 +505,7 @@ describe("Points", () => {
             offset: new Point(0, 0),
             scale: 1,
             size: new Point(1, 1),
-            zoomScale: 1,
+            // zoomScale: 1,
             zoom: 1,
         };
         describe("when this.gl is falsey", () => {
