@@ -69,7 +69,6 @@ export interface ICanvasOverlayDrawEvent {
     offset: any;
     scale: number;
     size: any;
-    zoomScale: number;
     zoom: number;
 }
 export interface IColor {

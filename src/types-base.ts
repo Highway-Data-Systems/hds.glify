@@ -83,7 +83,7 @@ export interface ICanvasOverlayDrawEvent {
   offset: any;
   scale: number;
   size: any;
-  zoomScale: number;
+  // zoomScale: number;
   zoom: number;
 }
 

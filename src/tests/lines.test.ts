@@ -306,7 +306,7 @@ describe("Lines", () => {
         offset: new Point(1, 1),
         scale: 1,
         size: new Point(10, 10),
-        zoomScale: 1,
+        // zoomScale: 1,
         zoom: 1,
         ...event,
       });

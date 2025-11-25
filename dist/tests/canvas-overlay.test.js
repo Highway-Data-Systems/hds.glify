@@ -239,7 +239,7 @@ describe("CanvasOverlay", () => {
                     offset: co._unclampedProject(new LatLng(bounds.getNorth(), bounds.getWest()), 0),
                     scale: Math.pow(2, zoom),
                     size,
-                    zoomScale: 0.00009981280936050754,
+                    // zoomScale: 0.00009981280936050754,
                     zoom,
                 });
             });
