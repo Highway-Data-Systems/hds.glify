@@ -23,10 +23,6 @@ import L, {
   ResizeEvent,
   LayerOptions,
 } from "leaflet";
-
-import * as leafletRotate from 'leaflet-rotate'
-
-
 export interface ICanvasOverlayDrawEvent {
   canvas: HTMLCanvasElement;
   bounds: LatLngBounds;

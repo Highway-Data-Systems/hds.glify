@@ -1,4 +1,5 @@
 import { Map } from "leaflet";
+import 'leaflet-rotate/dist/leaflet-rotate';
 import { Lines } from "./lines";
 import { Points } from "./points";
 import { Shapes } from "./shapes";
