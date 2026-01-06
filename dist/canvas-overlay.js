@@ -9,6 +9,7 @@ originally taken from: http://www.sumbera.com/gist/js/leaflet/canvas/L.CanvasOve
  inspired & portions taken from  :   https://github.com/Leaflet/Leaflet.heat
  */
 import L, { Point, Layer, Util, Browser, Bounds, DomUtil, } from "leaflet";
+import 'leaflet-rotate/dist/leaflet-rotate';
 export class CanvasOverlay extends Layer {
     get map() {
         return this._map;

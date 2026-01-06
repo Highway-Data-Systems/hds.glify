@@ -32,6 +32,8 @@ export interface ICanvasOverlayDrawEvent {
   // zoomScale: number;
   zoom: number;
 }
+import 'leaflet-rotate/dist/leaflet-rotate'; 
+
 
 export type IUserDrawFunc = (event: ICanvasOverlayDrawEvent) => void;
 

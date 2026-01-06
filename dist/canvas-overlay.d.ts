@@ -7,6 +7,7 @@ export interface ICanvasOverlayDrawEvent {
     size: Point;
     zoom: number;
 }
+import 'leaflet-rotate/dist/leaflet-rotate';
 export type IUserDrawFunc = (event: ICanvasOverlayDrawEvent) => void;
 export type RedrawCallback = (instance: CanvasOverlay) => void;
 export declare class CanvasOverlay extends Layer {
