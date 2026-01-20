@@ -38,7 +38,7 @@
     "@playwright/test": "^1.54.2",
     "earcut": "^2.2.4",
     "geojson-flatten": "^1.1.1",
-    "leaflet-rotate": "github:Highway-Data-Systems/leaflet-rotate#v1.0.6",
+    "leaflet-rotate": "github:Highway-Data-Systems/leaflet-rotate#v1.0.7",
     "point-in-polygon": "^1.1.0",
     "polygon-lookup": "^2.6.0",
     "rbush": "^3.0.1"
